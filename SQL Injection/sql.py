@@ -1,34 +1,22 @@
-from flask import Flask, request, jsonify
-import pymysql.cursors
+import sqlite3
 
-app = Flask(__name__)
+def fetch_user(username):
+    conn = sqlite3.connect('example.db')
+    cursor = conn.cursor()
 
-# MySQL configuration
-MYSQL_HOST = 'localhost'
-MYSQL_USER = 'root'
-MYSQL_PASSWORD = 'password'
-MYSQL_DB_NAME = 'test'
+    # Insecure code: directly concatenating user input into the SQL query
+    query = "SELECT * FROM users WHERE username='" + username + "'"
+    cursor.execute(query)
 
-# Establish connection to MySQL database
-connection = pymysql.connect(
-    host=MYSQL_HOST,
-    user=MYSQL_USER,
-    password=MYSQL_PASSWORD,
-    database=MYSQL_DB_NAME,
-    cursorclass=pymysql.cursors.DictCursor
-)
+    user = cursor.fetchone()
 
-# Vulnerable endpoint
-@app.route('/vulnerable/user/<int:user_id>', methods=['GET'])
-def vulnerable_user(user_id):
-    try:
-        with connection.cursor() as cursor:
-            sql = "SELECT * FROM users WHERE id = " + str(user_id)
-            cursor.execute(sql)
-            result = cursor.fetchall()
-            return jsonify(result)
-    except Exception as e:
-        return str(e), 500
+    conn.close()
+    return user
 
-if __name__ == '__main__':
-    app.run(debug=True)
+# Example usage
+username = input("Enter username: ")
+user = fetch_user(username)
+if user:
+    print("User found:", user)
+else:
+    print("User not found.")
